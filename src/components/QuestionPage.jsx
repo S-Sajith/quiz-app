@@ -1,9 +1,12 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./QuestionPage.module.css";
 
 function QuestionPage() {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
+
+  const navigate = useNavigate();
 
   const questions = [
     {
@@ -56,19 +59,59 @@ function QuestionPage() {
   ];
 
   const handleOptionClick = (questionId, option) => {
-    setSelectedOptions({ ...selectedOptions, [questionId]: option });
+    const question = questions.find((q) => q.id === questionId);
+
+    if (Array.isArray(question.correctAnswers)) {
+      // Multiple correct answers - allow multiple selections
+      const currentSelections = selectedOptions[questionId] || [];
+      if (currentSelections.includes(option)) {
+        // If already selected, deselect it
+        setSelectedOptions({
+          ...selectedOptions,
+          [questionId]: currentSelections.filter((opt) => opt !== option),
+        });
+      } else {
+        // Add the new selection
+        setSelectedOptions({
+          ...selectedOptions,
+          [questionId]: [...currentSelections, option],
+        });
+      }
+    } else {
+      // Single correct answer - only allow one selection
+      setSelectedOptions({ ...selectedOptions, [questionId]: option });
+    }
   };
 
   const handleNext = () => {
     if (currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
-    } else {
-      alert("All questions answered!");
     }
   };
 
-  const { text, options, image } = questions[currentQuestion];
+  const handleSubmit = () => {
+    let score = 0;
 
+    questions.forEach((question) => {
+      const selected = selectedOptions[question.id];
+      if (Array.isArray(question.correctAnswers)) {
+        if (
+          selected &&
+          question.correctAnswers.every((ans) => selected.includes(ans)) &&
+          selected.length === question.correctAnswers.length
+        ) {
+          score++;
+        }
+      } else if (selected === question.correctAnswer) {
+        score++;
+      }
+    });
+
+    const percentage = (score / questions.length) * 100;
+    navigate("/result", { state: { percentage } });
+  };
+
+  const { text, options, image } = questions[currentQuestion];
   const progressPercent = ((currentQuestion + 1) / questions.length) * 100;
 
   return (
@@ -126,7 +169,13 @@ function QuestionPage() {
             <div
               key={index}
               className={`${styles.option} ${
-                selectedOptions[questions[currentQuestion].id] === option
+                Array.isArray(selectedOptions[questions[currentQuestion].id])
+                  ? selectedOptions[questions[currentQuestion].id].includes(
+                      option
+                    )
+                    ? styles.selected
+                    : ""
+                  : selectedOptions[questions[currentQuestion].id] === option
                   ? styles.selected
                   : ""
               }`}
@@ -136,7 +185,13 @@ function QuestionPage() {
             >
               <div
                 className={`${styles.circle} ${
-                  selectedOptions[questions[currentQuestion].id] === option
+                  Array.isArray(selectedOptions[questions[currentQuestion].id])
+                    ? selectedOptions[questions[currentQuestion].id].includes(
+                        option
+                      )
+                      ? styles.selectedCircle
+                      : ""
+                    : selectedOptions[questions[currentQuestion].id] === option
                     ? styles.selectedCircle
                     : ""
                 }`}
@@ -145,24 +200,15 @@ function QuestionPage() {
             </div>
           ))}
         </div>
-        <button className={styles.button} onClick={handleNext}>
-          <span className={styles.buttonText}>Next</span>
-          <svg
-            width="16"
-            height="16"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className={styles.arrowIcon}
-          >
-            <path
-              d="M3 8h10M8 3l5 5-5 5"
-              stroke="#fff"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
+        {currentQuestion < questions.length - 1 ? (
+          <button className={styles.button} onClick={handleNext}>
+            <span className={styles.buttonText}>Next</span>
+          </button>
+        ) : (
+          <button className={styles.button} onClick={handleSubmit}>
+            <span className={styles.buttonText}>Submit</span>
+          </button>
+        )}
       </div>
     </div>
   );
