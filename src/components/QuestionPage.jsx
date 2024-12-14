@@ -1,62 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./QuestionPage.module.css";
 
 function QuestionPage() {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
-  const questions = [
-    {
-      id: 1,
-      text: "Which of these are valid state management tools in React?",
-      options: ["useState", "Redux", "Context API", "LocalStorage"],
-      correctAnswers: ["useState", "Redux", "Context API"],
-    },
-    {
-      id: 2,
-      text: "What does this image represent in CSS?",
-      options: ["Box model", "Flexbox", "CSS grid", "Overflow handling"],
-      image: "https://i.imgur.com/mWTV3Oj.png",
-      correctAnswer: "Box model",
-    },
-    {
-      id: 3,
-      text: "What does 'useEffect' do in React?",
-      options: [
-        "Fetch data",
-        "Manage state",
-        "Handle lifecycle events",
-        "Optimize performance",
-      ],
-      correctAnswer: "Handle lifecycle events",
-    },
-    {
-      id: 4,
-      text: "What is the purpose of the 'flexbox' in CSS?",
-      options: [
-        "Layout management",
-        "Text formatting",
-        "Animations",
-        "Responsive design",
-      ],
-      image: "https://i.imgur.com/TxxU7hf.png",
-      correctAnswer: "Layout management",
-    },
-    {
-      id: 5,
-      text: "Which JavaScript method is used to select an element by its ID?",
-      options: [
-        "getElementById",
-        "querySelector",
-        "getElementsByClassName",
-        "querySelectorAll",
-      ],
-      correctAnswer: "getElementById",
-    },
-  ];
+  useEffect(() => {
+    fetch("https://quiz-app.free.beeceptor.com/questions")
+      .then((response) => response.json())
+      .then((data) => {
+        setQuestions(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError("Failed to load questions.");
+        setLoading(false);
+      });
+  }, []);
 
   const handleOptionClick = (questionId, option) => {
     const question = questions.find((q) => q.id === questionId);
@@ -115,6 +81,14 @@ function QuestionPage() {
       state: { correctAnswers, wrongAnswers, percentage },
     });
   };
+
+  if (loading) {
+    return <div>Loading questions...</div>;
+  }
+
+  if (error) {
+    return <div>{error}</div>;
+  }
 
   const { text, options, image } = questions[currentQuestion];
   const progressPercent = ((currentQuestion + 1) / questions.length) * 100;
