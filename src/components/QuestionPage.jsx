@@ -107,8 +107,13 @@ function QuestionPage() {
       }
     });
 
+    const correctAnswers = score;
+    const wrongAnswers = questions.length - correctAnswers;
     const percentage = (score / questions.length) * 100;
-    navigate("/result", { state: { percentage } });
+
+    navigate("/result", {
+      state: { correctAnswers, wrongAnswers, percentage },
+    });
   };
 
   const { text, options, image } = questions[currentQuestion];
