@@ -104,7 +104,7 @@ Here's an overview of the main files and folders in this project:
 
 ## API Integration
 
-For the mock API, I have used **WireMock Cloud** to host mock APIs. This is used to simulate backend responses for the quiz. Since this is a mock API, no specific endpoints are listed, but it handles the quiz logic, including fetching quiz questions, simulating submitting answers and providing results.
+For the mock API, I have used WireMock Cloud to host mock APIs. It handles fetching quiz questions, while submitting answers and calculating scores are done in the UI itself. The APIs for submitting answers and calculating the score are included purely for demonstration, as the backend logic is not implemented.
 
 ---
 
