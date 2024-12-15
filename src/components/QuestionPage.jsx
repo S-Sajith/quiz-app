@@ -8,11 +8,12 @@ function QuestionPage() {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [startTime, setStartTime] = useState(Date.now());
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("https://quiz-app.free.beeceptor.com/questions")
+    fetch("https://9376r.wiremockapi.cloud/questions")
       .then((response) => response.json())
       .then((data) => {
         setQuestions(data);
@@ -49,13 +50,57 @@ function QuestionPage() {
     }
   };
 
-  const handleNext = () => {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+  const handleNext = async () => {
+    const endTime = Date.now();
+    const timeTakenInMs = endTime - startTime;
+
+    const minutes = Math.floor(timeTakenInMs / 60000);
+    const seconds = Math.floor((timeTakenInMs % 60000) / 1000);
+    const timeTaken = `${minutes}m ${seconds}s`;
+
+    const payload = {
+      questionId: questions[currentQuestion].id,
+      selectedOption: selectedOptions[questions[currentQuestion].id],
+      timeTaken: timeTaken,
+    };
+
+    try {
+      const response = await fetch(
+        "https://9376r.wiremockapi.cloud/questions/submit",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to submit answer");
+      }
+
+      const data = await response.json();
+
+      if (data.status === "success") {
+        console.log("Answer successfully submitted:", data.message);
+      } else {
+        throw new Error("API response indicates failure: " + data.message);
+      }
+
+      setStartTime(Date.now());
+      if (currentQuestion < questions.length - 1) {
+        setCurrentQuestion(currentQuestion + 1);
+      } else {
+        // If it's the last question, call the API to get the final score
+        handleGetScore();
+      }
+    } catch (err) {
+      console.error("Error submitting answer:", err);
     }
   };
 
-  const handleSubmit = () => {
+  const handleGetScore = async () => {
     let score = 0;
 
     questions.forEach((question) => {
@@ -77,9 +122,32 @@ function QuestionPage() {
     const wrongAnswers = questions.length - correctAnswers;
     const percentage = (score / questions.length) * 100;
 
-    navigate("/result", {
-      state: { correctAnswers, wrongAnswers, percentage },
-    });
+    try {
+      const response = await fetch(
+        "https://9376r.wiremockapi.cloud/questions/get-score",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            correctAnswers,
+            wrongAnswers,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch score");
+      }
+
+      // Navigate to the result page with the score data
+      navigate("/result", {
+        state: { correctAnswers, wrongAnswers, percentage },
+      });
+    } catch (err) {
+      console.error("Error fetching score:", err);
+    }
   };
 
   if (loading) {
@@ -198,7 +266,7 @@ function QuestionPage() {
             <span className={styles.buttonText}>Next</span>
           </button>
         ) : (
-          <button className={styles.button} onClick={handleSubmit}>
+          <button className={styles.button} onClick={handleNext}>
             <span className={styles.buttonText}>Submit</span>
           </button>
         )}
