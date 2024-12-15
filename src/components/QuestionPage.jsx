@@ -83,11 +83,25 @@ function QuestionPage() {
   };
 
   if (loading) {
-    return <div>Loading questions...</div>;
+    return (
+      <div className={styles.spinnerContainer}>
+        <div className={styles.spinner}></div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>{error}</div>;
+    return (
+      <div className={styles.errorContainer}>
+        <div className={styles.errorMessage}>{error}</div>
+        <button
+          className={styles.retryButton}
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const { text, options, image } = questions[currentQuestion];
